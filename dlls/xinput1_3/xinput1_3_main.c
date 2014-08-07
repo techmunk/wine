@@ -63,7 +63,8 @@ static const unsigned int jbuttons[WINE_XINPUT_BUTTONS] = {BTN_START, BTN_BACK, 
 static const unsigned int xbuttons[WINE_XINPUT_BUTTONS] = {XINPUT_GAMEPAD_START, XINPUT_GAMEPAD_BACK, XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB, XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER, XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y};
 
 static struct xpad {
-    char             device[strlen(EVDEVPREFIX)+4];
+//    char             device[strlen(EVDEVPREFIX)+4];
+    char             device[20];
     int              fd;
     BOOL             ff;
     XINPUT_STATE     state;
@@ -286,8 +287,6 @@ DWORD WINAPI XInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration)
 
 DWORD WINAPI DECLSPEC_HOTPATCH XInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
-    static int warn_once;
-
 #ifdef HAVE_CORRECT_LINUXINPUT_H
     int i;
     BYTE key[(KEY_MAX+7)/8];
@@ -345,6 +344,8 @@ packet:
     return ERROR_SUCCESS;
 
 #else  /* HAVE_CORRECT_LINUXINPUT_H */
+    static int warn_once;
+
     if (!warn_once++)
         FIXME("(%u %p)\n", dwUserIndex, pState);
 
@@ -371,8 +372,6 @@ DWORD WINAPI XInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserve, PXINPUT_KEYS
 
 DWORD WINAPI XInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities)
 {
-    static int warn_once;
-
 #ifdef HAVE_CORRECT_LINUXINPUT_H
     XINPUT_STATE tempstate;
 
@@ -396,6 +395,8 @@ DWORD WINAPI XInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPA
         return ERROR_DEVICE_NOT_CONNECTED;
 
 #else  /* HAVE_CORRECT_LINUXINPUT_H */
+    static int warn_once;
+
     if (!warn_once++)
         FIXME("(%d %d %p)\n", dwUserIndex, dwFlags, pCapabilities);
 
