@@ -373,6 +373,29 @@ DWORD WINAPI XInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPA
 {
     static int warn_once;
 
+#ifdef HAVE_CORRECT_LINUXINPUT_H
+    XINPUT_STATE tempstate;
+
+    TRACE("(%d %d %p)\n", dwUserIndex, dwFlags, pCapabilities);
+
+    if (!pCapabilities || dwUserIndex >= XUSER_MAX_COUNT || (dwFlags != 0 && dwFlags != XINPUT_FLAG_GAMEPAD))
+        return ERROR_BAD_ARGUMENTS;
+
+    if(XInputGetState(dwUserIndex, &tempstate) == ERROR_SUCCESS) {
+        pCapabilities->Type = XINPUT_DEVTYPE_GAMEPAD;
+        pCapabilities->SubType = XINPUT_DEVSUBTYPE_GAMEPAD;
+        pCapabilities->Flags = 0;
+        pCapabilities->Gamepad = xpads[dwUserIndex].state.Gamepad;
+#ifdef HAVE_STRUCT_FF_EFFECT_DIRECTION
+        pCapabilities->Vibration = *(PXINPUT_VIBRATION)&xpads[dwUserIndex].eff.u.rumble;
+#else  /* HAVE_STRUCT_FF_EFFECT_DIRECTION */
+        pCapabilities->Vibration = (XINPUT_VIBRATION){0,0};
+#endif  /* HAVE_STRUCT_FF_EFFECT_DIRECTION */
+        return ERROR_SUCCESS;
+    } else
+        return ERROR_DEVICE_NOT_CONNECTED;
+
+#else  /* HAVE_CORRECT_LINUXINPUT_H */
     if (!warn_once++)
         FIXME("(%d %d %p)\n", dwUserIndex, dwFlags, pCapabilities);
 
@@ -382,6 +405,7 @@ DWORD WINAPI XInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPA
         /* If controller exists then return ERROR_SUCCESS */
     }
     return ERROR_BAD_ARGUMENTS;
+#endif  /* HAVE_CORRECT_LINUXINPUT_H */
 }
 
 DWORD WINAPI XInputGetDSoundAudioDeviceGuids(DWORD dwUserIndex, GUID* pDSoundRenderGuid, GUID* pDSoundCaptureGuid)
